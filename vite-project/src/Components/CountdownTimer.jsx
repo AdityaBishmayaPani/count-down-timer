@@ -1,83 +1,117 @@
-// src/components/CountdownTimer.js
-import React, { useState, useEffect, useRef } from 'react';
-import { DateTime, Duration } from 'luxon';
-// import 'bootstrap/dist/css/bootstrap.min.css';
-// import './CountdownTimer.css'; // Custom styles
+import React from "react";
+import { useState, useEffect } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./CountDownTimer.css";
+const CountDownTimer = () => {
+  const [countdown, setCountdown] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
 
-const CountdownTimer = () => {
-  const [targetDate, setTargetDate] = useState('');
-  const [countdown, setCountdown] = useState(null);
-  const [intervalId, setIntervalId] = useState(null);
+  const [targetDate, setTargetDate] = useState(new Date());
+  const [running, setRunning] = useState(false);
 
-  const calculateTimeRemaining = (targetDateTime) => {
-    const now = DateTime.local();
-    const target = DateTime.fromISO(targetDateTime);
-    const remaining = target.diff(now, ['days', 'hours', 'minutes', 'seconds']);
-    return remaining;
+  const handleChange = (event) => {
+    setTargetDate(new Date(event.target.value));
   };
+
+  const calculateTimeLeft = () => {
+    if (!targetDate) return;
+    const now = new Date().getTime();
+    const difference = targetDate.getTime() - now;
+
+    if (difference > 0) {
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor(
+        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setCountdown({
+        days,
+        hours,
+        minutes,
+        seconds,
+      });
+    } else {
+      setCountdown({
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+      });
+    }
+  };
+
+  useEffect(() => {
+    
+    let timer
+    if (running) {
+       timer = setInterval(() => {
+        calculateTimeLeft();
+      }, 1000);
+    }
+
+    return () => clearInterval(timer);
+  }, [targetDate,running]);
 
   const startCountdown = () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-    }
-
-    const targetDateTime = DateTime.fromISO(targetDate);
-    if (targetDateTime.isValid && targetDateTime > DateTime.local()) {
-      setCountdown(calculateTimeRemaining(targetDate));
-
-      const newIntervalId = setInterval(() => {
-        const remaining = calculateTimeRemaining(targetDate);
-        setCountdown(remaining);
-        if (remaining.toMillis() <= 0) {
-          clearInterval(newIntervalId);
-        }
-      }, 1000);
-
-      setIntervalId(newIntervalId);
-    } else {
-      alert('Please enter a valid future date and time');
-    }
+    setRunning(true);
   };
 
-  const stopCountdown = () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-      setIntervalId(null);
-      setCountdown(null);
-    }
+  const cancelCountdown = () => {
+    setRunning(false);
+    setCountdown({
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+    });
+    // setTargetDate(null);
   };
-
   return (
-    <div className="container">
-      <h1>Countdown Timer</h1>
-      <div className="row">
-        <div className="col-12">
+    <div>
+      <div className="container">
+        <h1 className="text">
+          Countdown <span style={{ color: "purple" }}>Timer</span>
+        </h1>
+        <div className="text">
           <input
             type="datetime-local"
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
+            value={targetDate.toISOString().slice(0, 16)}
+            onChange={handleChange}
           />
-          <button onClick={startCountdown} className="btn btn-primary mx-2">
-            Start
-          </button>
-          <button onClick={stopCountdown} className="btn btn-danger mx-2">
-            Stop
-          </button>
         </div>
-      </div>
-
-      {countdown && (
-        <div className="row countdown">
-          <div className="col-12">
-            <h2>
-              {countdown.days} days, {(countdown.hours)} hours, {countdown.minutes} minutes,{' '}
-              {Math.floor(countdown.seconds)} seconds
-            </h2>
+        <div className="countdown-boxes">
+          <div className="countdown-box">
+            <span>{countdown.days}</span>
+            <span>Days</span>
+          </div>
+          <div className="countdown-box">
+            <span>{countdown.hours}</span>
+            <span>Hours</span>
+          </div>
+          <div className="countdown-box">
+            <span>{countdown.minutes}</span>
+            <span>Minutes</span>
+          </div>
+          <div className="countdown-box">
+            <span>{countdown.seconds}</span>
+            <span>Seconds</span>
           </div>
         </div>
-      )}
+        <div className="countdown-buttons">
+          {!running ? (
+            <button onClick={startCountdown}>Start</button>
+          ) : (
+            <button onClick={cancelCountdown}>Cancel</button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
-
-export default CountdownTimer;
+export default CountDownTimer;
